@@ -24,14 +24,15 @@ export function ProtectedRoute({
   }
 
   if (!user) {
+    const encodedRedirect = encodeURIComponent(location);
     return (
       <Route path={path}>
-        <Redirect to="/auth" />
+        <Redirect to={\`/auth?redirect_uri=\${encodedRedirect}\`} />
       </Route>
     );
   }
-  
-  // Handle user type checks for specific routes
+
+  // User type restriction
   if (user.userType === "tenant" && !location.includes("tenant-portal")) {
     return (
       <Route path={path}>
@@ -39,7 +40,7 @@ export function ProtectedRoute({
       </Route>
     );
   }
-  
+
   if (user.userType === "landlord" && location.includes("tenant-portal")) {
     return (
       <Route path={path}>
