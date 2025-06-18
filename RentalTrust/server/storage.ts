@@ -1,11 +1,4 @@
-import { 
-  users, User, InsertUser, 
-  properties, Property, InsertProperty,
-  units, Unit, InsertUnit,
-  tenants, Tenant, InsertTenant,
-  payments, Payment, InsertPayment,
-  notifications, Notification, InsertNotification
-} from "@shared/schema";
+
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
