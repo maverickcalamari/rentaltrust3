@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import { DivideIcon as LucideIcon } from "lucide-react";
 import { Sparkline } from "@/components/ui/sparkline";
 import { DeltaIndicator } from "@/components/ui/delta-indicator";
 
