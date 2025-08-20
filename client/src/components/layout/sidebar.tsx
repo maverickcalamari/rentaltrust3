@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
+import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { 
   Home, 
   Building2, 
@@ -23,26 +24,24 @@ interface SidebarProps {
 
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, signOut } = useSupabaseAuth();
   const { toast } = useToast();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   
   // Fetch unread notifications count
   useEffect(() => {
     if (user) {
-      fetch("/api/notifications", { credentials: "include" })
-        .then(res => res.json())
-        .then(data => {
-          setUnreadNotifications(data.filter((n: any) => !n.isRead).length);
-        })
-        .catch(err => {
-          console.error("Failed to fetch notifications", err);
-        });
+      // Fetch from Supabase
+      // Implementation would go here
     }
   }, [user]);
   
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
   
   const navigationItems = [
@@ -67,8 +66,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
   
   // Initial letter for avatar fallback
   const getInitials = () => {
-    if (!user?.firstName || !user?.lastName) return "U";
-    return `${user.firstName[0]}${user.lastName[0]}`;
+    if (!user?.user_metadata?.first_name || !user?.user_metadata?.last_name) return "U";
+    return `${user.user_metadata.first_name[0]}${user.user_metadata.last_name[0]}`;
   };
   
   return (
@@ -77,7 +76,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
       {isMobileOpen && (
         <button 
           onClick={() => setIsMobileOpen(false)}
-          className="absolute top-4 right-4 text-gray-500 md:hidden"
+          className="absolute top-4 right-4 text-gray-500 dark:text-gray-400 md:hidden"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -86,12 +85,15 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
       )}
       
       {/* Logo */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center">
           <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <h1 className="ml-2 text-xl font-semibold text-primary">RentEZ</h1>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
       
@@ -109,8 +111,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md",
                       location === item.href 
-                        ? "bg-primary-50 text-primary-700" 
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300" 
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
                     )}
                   >
                     <item.icon className="w-5 h-5 mr-2" />
@@ -134,8 +136,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md",
                       location === item.href 
-                        ? "bg-primary-50 text-primary-700" 
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-primary-50 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300" 
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
                     )}
                   >
                     <item.icon className="w-5 h-5 mr-2" />
@@ -154,7 +156,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
       </nav>
       
       {/* User Profile */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center">
           <Avatar>
             <AvatarImage src="" />
@@ -163,20 +165,19 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
             </AvatarFallback>
           </Avatar>
           <div className="ml-2">
-            <p className="text-sm font-medium text-gray-700">
-              {user?.firstName} {user?.lastName}
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {user?.user_metadata?.first_name} {user?.user_metadata?.last_name}
             </p>
-            <p className="text-xs text-gray-500 capitalize">
-              {user?.userType}
+            <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              {user?.user_metadata?.user_type}
             </p>
           </div>
           <Button
             variant="ghost"
             className="ml-auto p-2 h-auto"
             onClick={handleLogout}
-            disabled={logoutMutation.isPending}
           >
-            <LogOut className="h-4 w-4 text-gray-400" />
+            <LogOut className="h-4 w-4 text-gray-400 dark:text-gray-500" />
           </Button>
         </div>
       </div>
