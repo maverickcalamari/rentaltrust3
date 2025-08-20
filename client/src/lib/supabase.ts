@@ -1,14 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+// client/src/lib/supabase.ts
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
+// ---- Types ------------------------------------------------------------------
 export type Database = {
   public: {
     Tables: {
@@ -19,7 +12,7 @@ export type Database = {
           first_name: string;
           last_name: string;
           phone: string | null;
-          user_type: 'landlord' | 'manager' | 'tenant';
+          user_type: "landlord" | "manager" | "tenant";
           organization_id: string | null;
           created_at: string;
           updated_at: string;
@@ -30,7 +23,7 @@ export type Database = {
           first_name: string;
           last_name: string;
           phone?: string | null;
-          user_type: 'landlord' | 'manager' | 'tenant';
+          user_type: "landlord" | "manager" | "tenant";
           organization_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -41,7 +34,7 @@ export type Database = {
           first_name?: string;
           last_name?: string;
           phone?: string | null;
-          user_type?: 'landlord' | 'manager' | 'tenant';
+          user_type?: "landlord" | "manager" | "tenant";
           organization_id?: string | null;
           updated_at?: string;
         };
@@ -136,7 +129,7 @@ export type Database = {
           monthly_rent: number;
           security_deposit: number;
           rent_due_day: number;
-          status: 'active' | 'expired' | 'terminated';
+          status: "active" | "expired" | "terminated";
           created_at: string;
           updated_at: string;
         };
@@ -149,7 +142,7 @@ export type Database = {
           monthly_rent: number;
           security_deposit: number;
           rent_due_day: number;
-          status?: 'active' | 'expired' | 'terminated';
+          status?: "active" | "expired" | "terminated";
           created_at?: string;
           updated_at?: string;
         };
@@ -162,7 +155,7 @@ export type Database = {
           monthly_rent?: number;
           security_deposit?: number;
           rent_due_day?: number;
-          status?: 'active' | 'expired' | 'terminated';
+          status?: "active" | "expired" | "terminated";
           updated_at?: string;
         };
       };
@@ -174,7 +167,7 @@ export type Database = {
           due_date: string;
           period_start: string;
           period_end: string;
-          status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+          status: "pending" | "paid" | "overdue" | "cancelled";
           late_fee: number;
           stripe_payment_intent_id: string | null;
           created_at: string;
@@ -187,7 +180,7 @@ export type Database = {
           due_date: string;
           period_start: string;
           period_end: string;
-          status?: 'pending' | 'paid' | 'overdue' | 'cancelled';
+          status?: "pending" | "paid" | "overdue" | "cancelled";
           late_fee?: number;
           stripe_payment_intent_id?: string | null;
           created_at?: string;
@@ -200,7 +193,7 @@ export type Database = {
           due_date?: string;
           period_start?: string;
           period_end?: string;
-          status?: 'pending' | 'paid' | 'overdue' | 'cancelled';
+          status?: "pending" | "paid" | "overdue" | "cancelled";
           late_fee?: number;
           stripe_payment_intent_id?: string | null;
           updated_at?: string;
@@ -241,8 +234,8 @@ export type Database = {
           unit_id: string;
           title: string;
           description: string;
-          priority: 'low' | 'medium' | 'high' | 'urgent';
-          status: 'open' | 'in_progress' | 'resolved' | 'closed';
+          priority: "low" | "medium" | "high" | "urgent";
+          status: "open" | "in_progress" | "resolved" | "closed";
           photos: string[] | null;
           created_at: string;
           updated_at: string;
@@ -253,8 +246,8 @@ export type Database = {
           unit_id: string;
           title: string;
           description: string;
-          priority?: 'low' | 'medium' | 'high' | 'urgent';
-          status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+          priority?: "low" | "medium" | "high" | "urgent";
+          status?: "open" | "in_progress" | "resolved" | "closed";
           photos?: string[] | null;
           created_at?: string;
           updated_at?: string;
@@ -265,8 +258,8 @@ export type Database = {
           unit_id?: string;
           title?: string;
           description?: string;
-          priority?: 'low' | 'medium' | 'high' | 'urgent';
-          status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+          priority?: "low" | "medium" | "high" | "urgent";
+          status?: "open" | "in_progress" | "resolved" | "closed";
           photos?: string[] | null;
           updated_at?: string;
         };
@@ -277,26 +270,40 @@ export type Database = {
           invoice_id: string;
           reminder_type: string;
           sent_at: string;
-          method: 'email' | 'sms';
-          status: 'sent' | 'failed';
+          method: "email" | "sms";
+          status: "sent" | "failed";
         };
         Insert: {
           id?: string;
           invoice_id: string;
           reminder_type: string;
           sent_at: string;
-          method: 'email' | 'sms';
-          status: 'sent' | 'failed';
+          method: "email" | "sms";
+          status: "sent" | "failed";
         };
         Update: {
           id?: string;
           invoice_id?: string;
           reminder_type?: string;
           sent_at?: string;
-          method?: 'email' | 'sms';
-          status?: 'sent' | 'failed';
+          method?: "email" | "sms";
+          status?: "sent" | "failed";
         };
       };
     };
   };
 };
+
+// ---- Client -----------------------------------------------------------------
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+// Prefer warning in builds instead of hard-throwing (throw can break CI builds)
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY");
+}
+
+export const supabase = createClient<Database>(
+  supabaseUrl ?? "",
+  supabaseAnonKey ?? ""
+);

@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { 
   users, User, InsertUser, 
   properties, Property, InsertProperty,
@@ -462,18 +463,12 @@ export const storage = new MemStorage();
 // Add seed data for testing
 (async () => {
   try {
-    // Import the authentication utilities
-    const { scrypt, randomBytes } = await import('crypto');
-    const { promisify } = await import('util');
-    
-    // Implementation of hashPassword function
-    const scryptAsync = promisify(scrypt);
+    // Use bcryptjs to avoid scrypt polyfill issues
     const hashPassword = async (password: string) => {
-      const salt = randomBytes(16).toString("hex");
-      const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-      return `${buf.toString("hex")}.${salt}`;
+      const salt = await bcrypt.genSalt(10);
+      return bcrypt.hash(password, salt);
     };
-    
+
     // Create a landlord user
     const landlordPassword = await hashPassword("password");
     const landlord = await storage.createUser({
@@ -483,7 +478,7 @@ export const storage = new MemStorage();
       lastName: "Smith",
       email: "landlord@example.com",
       phone: "555-123-4567",
-      userType: "landlord"
+      userType: "landlord",
     });
 
     // Create a tenant user
@@ -495,7 +490,7 @@ export const storage = new MemStorage();
       lastName: "Doe",
       email: "tenant@example.com",
       phone: "555-987-6543",
-      userType: "tenant"
+      userType: "tenant",
     });
 
     // Create a property
@@ -507,28 +502,28 @@ export const storage = new MemStorage();
       zip: "62701",
       totalUnits: 4,
       landlordId: landlord.id,
-      isActive: true
+      isActive: true,
     });
 
-    // Create units
+    // Create units (ensure numeric fields are numbers)
     const unit1 = await storage.createUnit({
       unitNumber: "101",
       propertyId: property.id,
       bedrooms: 2,
-      bathrooms: "1",
+      bathrooms: 1,        // number
       sqft: 950,
-      monthlyRent: "1200",
-      isOccupied: true
+      monthlyRent: 1200,   // number
+      isOccupied: true,
     });
 
     const unit2 = await storage.createUnit({
       unitNumber: "102",
       propertyId: property.id,
       bedrooms: 1,
-      bathrooms: "1",
+      bathrooms: 1,        // number
       sqft: 750,
-      monthlyRent: "950",
-      isOccupied: false
+      monthlyRent: 950,    // number
+      isOccupied: false,
     });
 
     // Create tenant record
@@ -538,37 +533,37 @@ export const storage = new MemStorage();
       leaseStartDate: new Date(2023, 0, 1),
       leaseEndDate: new Date(2023, 11, 31),
       rentDueDay: 1,
-      isActive: true
+      isActive: true,
     });
 
-    // Create payments
+    // Create payments (use numbers for amount)
     const now = new Date();
-    
+
     await storage.createPayment({
       tenantId: tenantRecord.id,
-      amount: "1200",
+      amount: 1200,
       dueDate: new Date(now.getFullYear(), now.getMonth() - 2, 1),
       status: "paid",
       paymentDate: new Date(now.getFullYear(), now.getMonth() - 2, 3),
-      paymentMethod: "Credit Card"
+      paymentMethod: "Credit Card",
     });
 
     await storage.createPayment({
       tenantId: tenantRecord.id,
-      amount: "1200",
+      amount: 1200,
       dueDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
       status: "paid",
       paymentDate: new Date(now.getFullYear(), now.getMonth() - 1, 2),
-      paymentMethod: "Credit Card"
+      paymentMethod: "Credit Card",
     });
 
     await storage.createPayment({
       tenantId: tenantRecord.id,
-      amount: "1200",
+      amount: 1200,
       dueDate: new Date(now.getFullYear(), now.getMonth(), 1),
       status: "pending",
       paymentDate: null,
-      paymentMethod: null
+      paymentMethod: null,
     });
 
     // Create notifications
@@ -576,7 +571,7 @@ export const storage = new MemStorage();
       userId: tenant.id,
       message: "Your rent payment is due tomorrow",
       type: "payment",
-      isRead: false
+      isRead: false,
     });
 
     console.log("Seed data created successfully");
