@@ -16,12 +16,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CalendarIcon, 
-  Filter, 
-  X, 
-  Search 
-} from 'lucide-react';
+import { CalendarIcon, X, Search } from 'lucide-react';
 import { format, subDays, subMonths } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -48,7 +43,7 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
   // Sync filters with URL
   useEffect(() => {
     const params = new URLSearchParams();
-    
+
     if (filters.dateRange?.from) {
       params.set('from', format(filters.dateRange.from, 'yyyy-MM-dd'));
     }
@@ -61,7 +56,8 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
     if (filters.paymentStatus) params.set('payment_status', filters.paymentStatus);
     if (filters.search) params.set('search', filters.search);
 
-    const newUrl = params.toString() ? `${location.split('?')[0]}?${params.toString()}` : location.split('?')[0];
+    const base = location.split('?')[0];
+    const newUrl = params.toString() ? `${base}?${params.toString()}` : base;
     if (newUrl !== location) {
       setLocation(newUrl);
     }
@@ -72,12 +68,9 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
     const params = new URLSearchParams(location.split('?')[1] || '');
     const fromDate = params.get('from');
     const toDate = params.get('to');
-    
+
     const urlFilters: FilterState = {
-      dateRange: fromDate && toDate ? {
-        from: new Date(fromDate),
-        to: new Date(toDate)
-      } : undefined,
+      dateRange: fromDate && toDate ? { from: new Date(fromDate), to: new Date(toDate) } : undefined,
       propertyId: params.get('property'),
       unitId: params.get('unit'),
       tenantStatus: params.get('tenant_status'),
@@ -86,6 +79,7 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
     };
 
     onFiltersChange(urlFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearAllFilters = () => {
@@ -109,10 +103,7 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
   const setQuickDateRange = (days: number) => {
     const to = new Date();
     const from = days === 30 ? subDays(to, 30) : subMonths(to, 3);
-    onFiltersChange({
-      ...filters,
-      dateRange: { from, to }
-    });
+    onFiltersChange({ ...filters, dateRange: { from, to } });
     setIsCalendarOpen(false);
   };
 
@@ -122,12 +113,10 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
     filters.unitId,
     filters.tenantStatus,
     filters.paymentStatus,
-    filters.search
+    filters.search,
   ].filter(Boolean).length;
 
-  const filteredUnits = units.filter(unit => 
-    !filters.propertyId || unit.property_id === filters.propertyId
-  );
+  const filteredUnits = units.filter((unit) => !filters.propertyId || unit.property_id === filters.propertyId);
 
   return (
     <div className="bg-white border-b border-gray-200 p-4 space-y-4">
@@ -135,7 +124,7 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative min-w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search..."
             value={filters.search}
@@ -152,32 +141,23 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
               {filters.dateRange?.from ? (
                 filters.dateRange.to ? (
                   <>
-                    {format(filters.dateRange.from, "LLL dd")} -{" "}
-                    {format(filters.dateRange.to, "LLL dd, y")}
+                    {format(filters.dateRange.from, 'LLL dd')} - {format(filters.dateRange.to, 'LLL dd, y')}
                   </>
                 ) : (
-                  format(filters.dateRange.from, "LLL dd, y")
+                  format(filters.dateRange.from, 'LLL dd, y')
                 )
               ) : (
-                "Pick a date range"
+                'Pick a date range'
               )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <div className="p-3 border-b">
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuickDateRange(30)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setQuickDateRange(30)}>
                   Last 30 days
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuickDateRange(90)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setQuickDateRange(90)}>
                   Last 90 days
                 </Button>
               </div>
@@ -195,18 +175,20 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
 
         {/* Property Filter */}
         <Select
-          value={filters.propertyId || ''}
-          onValueChange={(value) => onFiltersChange({ 
-            ...filters, 
-            propertyId: value || null,
-            unitId: null // Reset unit when property changes
-          })}
+          value={filters.propertyId ?? 'all'}
+          onValueChange={(value) =>
+            onFiltersChange({
+              ...filters,
+              propertyId: value === 'all' ? null : value,
+              unitId: null, // Reset unit when property changes
+            })
+          }
         >
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All Properties" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Properties</SelectItem>
+            <SelectItem value="all">All Properties</SelectItem>
             {properties.map((property) => (
               <SelectItem key={property.id} value={property.id}>
                 {property.name}
@@ -217,15 +199,15 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
 
         {/* Unit Filter */}
         <Select
-          value={filters.unitId || ''}
-          onValueChange={(value) => onFiltersChange({ ...filters, unitId: value || null })}
+          value={filters.unitId ?? 'all'}
+          onValueChange={(value) => onFiltersChange({ ...filters, unitId: value === 'all' ? null : value })}
           disabled={!filters.propertyId}
         >
           <SelectTrigger className="w-32">
             <SelectValue placeholder="All Units" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Units</SelectItem>
+            <SelectItem value="all">All Units</SelectItem>
             {filteredUnits.map((unit) => (
               <SelectItem key={unit.id} value={unit.id}>
                 Unit {unit.unit_number}
@@ -236,14 +218,14 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
 
         {/* Tenant Status Filter */}
         <Select
-          value={filters.tenantStatus || ''}
-          onValueChange={(value) => onFiltersChange({ ...filters, tenantStatus: value || null })}
+          value={filters.tenantStatus ?? 'all'}
+          onValueChange={(value) => onFiltersChange({ ...filters, tenantStatus: value === 'all' ? null : value })}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Tenant Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Tenants</SelectItem>
+            <SelectItem value="all">All Tenants</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
@@ -251,14 +233,14 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
 
         {/* Payment Status Filter */}
         <Select
-          value={filters.paymentStatus || ''}
-          onValueChange={(value) => onFiltersChange({ ...filters, paymentStatus: value || null })}
+          value={filters.paymentStatus ?? 'all'}
+          onValueChange={(value) => onFiltersChange({ ...filters, paymentStatus: value === 'all' ? null : value })}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Payment Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Payments</SelectItem>
+            <SelectItem value="all">All Payments</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="overdue">Overdue</SelectItem>
@@ -279,62 +261,44 @@ export function FilterBar({ filters, onFiltersChange, properties = [], units = [
           {filters.dateRange && (
             <Badge variant="secondary" className="flex items-center gap-1">
               {filters.dateRange.from && filters.dateRange.to
-                ? `${format(filters.dateRange.from, "MMM dd")} - ${format(filters.dateRange.to, "MMM dd")}`
+                ? `${format(filters.dateRange.from, 'MMM dd')} - ${format(filters.dateRange.to, 'MMM dd')}`
                 : 'Date range'}
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('dateRange')}
-              />
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('dateRange')} />
             </Badge>
           )}
-          
+
           {filters.propertyId && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              {properties.find(p => p.id === filters.propertyId)?.name || 'Property'}
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('propertyId')}
-              />
+              {properties.find((p) => p.id === filters.propertyId)?.name || 'Property'}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('propertyId')} />
             </Badge>
           )}
-          
+
           {filters.unitId && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Unit {units.find(u => u.id === filters.unitId)?.unit_number || ''}
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('unitId')}
-              />
+              Unit {units.find((u) => u.id === filters.unitId)?.unit_number || ''}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('unitId')} />
             </Badge>
           )}
-          
+
           {filters.tenantStatus && (
             <Badge variant="secondary" className="flex items-center gap-1">
               {filters.tenantStatus === 'active' ? 'Active Tenants' : 'Inactive Tenants'}
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('tenantStatus')}
-              />
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('tenantStatus')} />
             </Badge>
           )}
-          
+
           {filters.paymentStatus && (
             <Badge variant="secondary" className="flex items-center gap-1">
               {filters.paymentStatus.charAt(0).toUpperCase() + filters.paymentStatus.slice(1)} Payments
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('paymentStatus')}
-              />
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('paymentStatus')} />
             </Badge>
           )}
-          
+
           {filters.search && (
             <Badge variant="secondary" className="flex items-center gap-1">
               Search: "{filters.search}"
-              <X 
-                className="h-3 w-3 cursor-pointer" 
-                onClick={() => removeFilter('search')}
-              />
+              <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('search')} />
             </Badge>
           )}
         </div>
