@@ -2,8 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -13,19 +12,13 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
+// --- password helpers (bcryptjs) ---
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
 }
-
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+async function comparePasswords(plain: string, hashed: string) {
+  return bcrypt.compare(plain, hashed);
 }
 
 export function setupAuth(app: Express) {
@@ -37,7 +30,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
-    }
+    },
   };
 
   app.set("trust proxy", 1);
@@ -45,13 +38,16 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // username/password fields are the defaults; specify if yours differ
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
-        return done(null, user);
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) return done(null, false);
+        const ok = await comparePasswords(password, user.password);
+        return ok ? done(null, user) : done(null, false);
+      } catch (err) {
+        return done(err as Error);
       }
     }),
   );
@@ -59,15 +55,15 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
     const user = await storage.getUser(id);
-    done(null, user);
+    done(null, user || false);
   });
+
+  // NOTE: ensure app.use(express.json()) is set before this in your server bootstrap
 
   app.post("/api/register", async (req, res, next) => {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).send("Username already exists");
-      }
+      if (existingUser) return res.status(400).send("Username already exists");
 
       const user = await storage.createUser({
         ...req.body,
